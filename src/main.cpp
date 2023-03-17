@@ -22,10 +22,9 @@ void readSound(const char* path, int16_t*& pcm, SF_INFO& sndInfo)
 	pcm = (int16_t*)malloc(sizeof(int16_t) * sndInfo.channels * sndInfo.frames);
 	sf_count_t framesRead = sf_readf_short(sndFile, pcm, sndInfo.frames);
 	if (framesRead == sndInfo.frames)
-	{
-		printf("Sucess\n");
 		printf("Total frames: %lli\n", sndInfo.frames);
-	}
+	else
+		printf("Error\n");
 	sf_close(sndFile);
 }
 
@@ -56,11 +55,11 @@ int main()
 	// Allocate the double size of PCM (X, Y)
 	//  x1   y1     x2   y2     x3   y3
 	// [0][pcm[0]] [1][pcm[1]] [2][pcm[2]] ...
-	int16_t* wave = (int16_t*)malloc(sizeof(int16_t) * sndInfo.frames * 2);
+	int32_t* wave = (int32_t*)malloc(sizeof(int32_t) * sndInfo.frames * 2);
 	for (sf_count_t i = 0; i < sndInfo.frames; i++)
 	{
-		wave[i*2] = i;				// X
-		wave[(i*2)+1] = -pcm[i];	// Y
+		wave[i*2] = i;											// X
+		wave[(i*2)+1] = (int32_t)-pcm[i];		// Y
 	}
 	free(pcm);
 
@@ -70,11 +69,11 @@ int main()
 	glGenBuffers(1, &VBO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(int16_t) * sndInfo.frames * 2, wave, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(int32_t) * sndInfo.frames * 2, wave, GL_STATIC_DRAW);
 
 	glBindVertexArray(VAO);
 	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(0, 2, GL_SHORT, 2 * sizeof(int16_t), (void*)(sizeof(int16_t) * 0));
+	glVertexAttribIPointer(0, 2, GL_INT, 2 * sizeof(int32_t), (void*)(sizeof(int32_t) * 0));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -91,7 +90,7 @@ int main()
 		/* Transformations */
 		mat4 model = mat4(1.0f);
 		model = translate(model, vec3(0.0f, 360.0f, 0.0f));
-		model = scale(model, vec3(0.04f, 0.005f, 0.0f));
+		model = scale(model, vec3(0.005f, 0.005f, 0.0f));
 
 		/* Set shader and pass transformations */
 		shaderLines.use();

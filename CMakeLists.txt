@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(PROJECT_NAME AUDIO_PLOT)
-project(${PROJECT_NAME} VERSION 1.0 DESCRIPTION "A simple demostration of gaussian blur using opengl" HOMEPAGE_URL "https://github.com/Th3UwU/" LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 1.0 DESCRIPTION "Simple audio wave plot" HOMEPAGE_URL "https://github.com/Th3UwU/" LANGUAGES CXX)
 
 file(GLOB_RECURSE
 	SOURCES CONFIGURE_DEPENDS
@@ -20,10 +20,6 @@ target_link_libraries(
 	"glew32"
 	"glfw3"
 	"opengl32")
-
-target_compile_definitions(
-	${PROJECT_NAME} PRIVATE
-	GLFW_INCLUDE_NONE)
 
 target_compile_definitions(
 	${PROJECT_NAME} PRIVATE
