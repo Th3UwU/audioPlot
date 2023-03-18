@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
+#include <string>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,7 +13,8 @@ extern "C"
 	#include <GL/glew.h>
 }
 
-#include <shader.hpp>
+#include "shader.hpp"
+#include "utils.hpp"
 
 const int windowWidth = 1280;
 const int windowHeight = 720;
@@ -52,6 +54,8 @@ void getWave(int16_t*& pcm, SF_INFO& sndInfo, float start, float end, int32_t*& 
 
 int main()
 {
+	enableUTF8();
+	
 	int16_t* pcm;
 	SF_INFO sndInfo;
 	readSound("../song.ogg", pcm, sndInfo);

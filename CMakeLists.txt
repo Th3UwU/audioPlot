@@ -16,10 +16,11 @@ target_include_directories(
 
 target_link_libraries(
 	${PROJECT_NAME} PRIVATE
-	"sndfile"
-	"glew32"
-	"glfw3"
-	"opengl32")
+	fmt
+	sndfile
+	glew32
+	glfw3
+	opengl32)
 
 target_compile_definitions(
 	${PROJECT_NAME} PRIVATE
