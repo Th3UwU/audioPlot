@@ -5,8 +5,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace glm;
-
 extern "C"
 {
 	#include <sndfile.h>
@@ -16,16 +14,40 @@ extern "C"
 
 #include <shader.hpp>
 
+const int windowWidth = 1280;
+const int windowHeight = 720;
+
 void readSound(const char* path, int16_t*& pcm, SF_INFO& sndInfo)
 {
 	SNDFILE* sndFile = sf_open(path, SFM_READ, &sndInfo);
 	pcm = (int16_t*)malloc(sizeof(int16_t) * sndInfo.channels * sndInfo.frames);
 	sf_count_t framesRead = sf_readf_short(sndFile, pcm, sndInfo.frames);
 	if (framesRead == sndInfo.frames)
-		printf("Total frames: %lli\n", sndInfo.frames);
+		printf("Total frames: %lli\nSample rate: %i\n", sndInfo.frames, sndInfo.samplerate);
 	else
 		printf("Error\n");
 	sf_close(sndFile);
+}
+
+void getWave(int16_t*& pcm, SF_INFO& sndInfo, float start, float end, int32_t*& wave, size_t& waveSize, uint32_t& lines)
+{
+	// Get START and END index from PCM[]
+	int32_t firstFrame = sndInfo.samplerate * start;
+	int32_t lastFrame = sndInfo.samplerate * end;
+
+	// Total size of WAVE[]
+	waveSize = 2 * sizeof(int32_t) * (lastFrame - firstFrame);
+
+	// Count of total lines
+	lines = lastFrame - firstFrame;
+
+	// Allocate mem and copy corresponding data
+	wave = (int32_t*)malloc(waveSize);
+	for (int32_t i = firstFrame; i < lastFrame; i++)
+	{
+		wave[i*2] = i;							// x
+		wave[(i*2)+1] = (int32_t)(-pcm[i]);		// y
+	}
 }
 
 int main()
@@ -40,27 +62,23 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, false);
 
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Audio Plot", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Audio Plot", NULL, NULL);
 	glfwMakeContextCurrent(window);
 	glewInit();
+	glfwSwapInterval(1);
 
-	glViewport(0, 0, 1280, 720);
+	glViewport(0, 0, windowWidth, windowHeight);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	mat4 projection = ortho(0.0f, 1280.0f, 720.0f, 0.0f, -1.0f, 1.0f);
+	glm::mat4 projection = glm::ortho(0.0f, float(windowWidth), float(windowHeight), 0.0f, -1.0f, 1.0f);
 	Shader shaderLines("../shader/lineStrip.vert", "../shader/lineStrip.frag");
 
-	// Get points
-	// Allocate the double size of PCM (X, Y)
-	//  x1   y1     x2   y2     x3   y3
-	// [0][pcm[0]] [1][pcm[1]] [2][pcm[2]] ...
-	int32_t* wave = (int32_t*)malloc(sizeof(int32_t) * sndInfo.frames * 2);
-	for (sf_count_t i = 0; i < sndInfo.frames; i++)
-	{
-		wave[i*2] = i;											// X
-		wave[(i*2)+1] = (int32_t)-pcm[i];		// Y
-	}
+	// Get wave
+	size_t waveSize;
+	uint32_t lines;
+	int32_t* wave;
+	getWave(pcm, sndInfo, 0.0f, 0.05f, wave, waveSize, lines);
 	free(pcm);
 
 	// Wave VAO
@@ -69,7 +87,7 @@ int main()
 	glGenBuffers(1, &VBO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(int32_t) * sndInfo.frames * 2, wave, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, waveSize, wave, GL_STATIC_DRAW);
 
 	glBindVertexArray(VAO);
 	glEnableVertexAttribArray(0);
@@ -77,6 +95,7 @@ int main()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	free(wave);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -88,9 +107,9 @@ int main()
 		// DRAW WAVE
 
 		/* Transformations */
-		mat4 model = mat4(1.0f);
-		model = translate(model, vec3(0.0f, 360.0f, 0.0f));
-		model = scale(model, vec3(0.005f, 0.005f, 0.0f));
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 360.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f, 0.01f, 0.0f));
 
 		/* Set shader and pass transformations */
 		shaderLines.use();
@@ -98,7 +117,7 @@ int main()
 		shaderLines.setValue("projection", projection);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINE_STRIP, 0, sndInfo.frames);
+		glDrawArrays(GL_LINE_STRIP, 0, lines);
 		glBindVertexArray(0);
 		//
 
@@ -106,7 +125,6 @@ int main()
 	}
 
 	glfwTerminate();
-	free(wave);
 
 	return 0;
 }
