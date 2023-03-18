@@ -54,7 +54,7 @@ int main()
 {
 	int16_t* pcm;
 	SF_INFO sndInfo;
-	readSound("../song.wav", pcm, sndInfo);
+	readSound("../song.ogg", pcm, sndInfo);
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
